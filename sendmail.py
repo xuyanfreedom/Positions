@@ -8,6 +8,13 @@ from email import Encoders
 import os
 import pdb
 from diffs import *
+from pyPdf import PdfFileWriter, PdfFileReader
+
+#------------------------------------------
+# Append input PDF file to output PDF file
+#------------------------------------------
+def appendPdf(input, output):
+    [output.addPage(input.getPage(pageNum)) for pageNum in range(input.numPages)]
 
 #-----------------------------------------------
 # Return a string representation of a text file
@@ -59,10 +66,21 @@ if __name__ == '__main__':
     ATTACH = True
     if ATTACH:
         msg.attach(MIMEText(''))
-        # Attach file
+
+        # Create performance calculations PDF file
         filename = market + '-perf-' + str(asofDate) + '.txt'
-        outFilename = market + '-perf-' + str(asofDate) + '.pdf'
-        createPdf(filename, outFilename)
+        perfFilename = market + '-perf-' + str(asofDate) + '.pdf'
+        createPdf(filename, perfFilename)
+
+        # Join performance calculations PDF file and plot PDF file
+        plotFilename = market + '-plot.pdf'
+        outFilename = 'Artemis ' + market + ' ' + getMatchStr(str(currentDate)) + '.pdf'
+        output = PdfFileWriter()
+        appendPdf(PdfFileReader(file(perfFilename, 'rb')), output)
+        appendPdf(PdfFileReader(file(plotFilename, 'rb')), output)
+        output.write(file(outFilename, 'wb'))
+
+        # Attach combo PDF file to email
         part = MIMEBase('application', 'octet-stream')
         part.set_payload(open(outFilename, 'rb').read())
         Encoders.encode_base64(part)
