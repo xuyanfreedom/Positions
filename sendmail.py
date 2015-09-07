@@ -56,6 +56,7 @@ if __name__ == '__main__':
     for line in f:
         date = int(line.strip())
         if date == currentDate:
+            print currentDate + ' is a holiday.'
             sys.exit()
 
     hostname = 'mail.anthos-trading.com'
@@ -93,6 +94,10 @@ if __name__ == '__main__':
         Encoders.encode_base64(part)
         part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(outFilename))
         msg.attach(part)
+
+        # Also save combo PDF file to positions dir for online access
+        command = "cp '" + outFilename + "' /var/www/positions"
+        os.system(command)
     else:
         body = fileToStr(filename)
         msg.attach(MIMEText(body, 'plain'))
