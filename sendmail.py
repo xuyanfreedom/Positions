@@ -9,6 +9,7 @@ import os
 import pdb
 from diffs import *
 from pyPdf import PdfFileWriter, PdfFileReader
+import time
 
 #------------------------------------------
 # Append input PDF file to output PDF file
@@ -49,28 +50,44 @@ if __name__ == '__main__':
         # Use last date from file
         asofDate = dates[-1]
 
-    # Don't run if it's a holiday
     currentDate = int(time.strftime('%Y%m%d'))
-    filename = market + '-holidays.csv'
+
+    # Don't run if it's a holiday
+    filename = getMarket(market) + '-holidays.csv'
     f = open(filename)
+    holidays = []
     for line in f:
-        date = int(line.strip())
-        if date == currentDate:
-            print currentDate + ' is a holiday.'
-            sys.exit()
+        holiday = int(line.strip())
+        holidays.append(holiday)
+    if currentDate in holidays:
+        print str(currentDate) + ' is a holiday.'
+        sys.exit()
+
+    # Don't run if today's becnhmark file hasn't been saved (this can happen if today's email doesn't arrive
+    # by the time preprocess.py runs, or if the email subject is wrong); in that case, the performance
+    # report isn't updated either.  If preprocess.py doesn't find a new email to save (and to update the 
+    # dates.csv file), then yesterday's benchmark file will still be there, saved with yesterday's date.
+    filename = getMarket(market) + '-' + str(asofDate) + '.csv'
+    fileSavedDate = int(datetime.strptime(time.ctime(os.path.getctime(filename)), "%a %b %d %H:%M:%S %Y").strftime('%Y%m%d'))
+    if fileSavedDate != currentDate and fileSavedDate not in holidays:
+        sys.exit()
 
     hostname = 'mail.anthos-trading.com'
     password = 'ai024709th3669'
     sender = 'panos.nikoulis@anthos-trading.com'
     recipients = ['pnikoulis@yahoo.com']
+    if market == 'US-tradehero' or market == 'LSE-tradehero':
+        recipients.extend(['kostas.anthis@investingbetter.com',
+                           'pantelis.kokkalis@gmail.com',
+                           'lydia.grigoriadou@investingbetter.com'])
 
     msg = MIMEMultipart()
     msg.set_charset("utf-8")
-    msg['Subject'] = 'Artemis ' + market + ' ' + getMatchStr(str(currentDate))
+    msg['Subject'] = 'Artemis ' + market + ' ' + getMatchStr(str(currentDate), showFullYear=True)
     msg['From'] = sender
     msg['To'] = ','.join(recipients)
 
-    # Text attachments are a bot garbled on iOS, so put in message body instead
+    # Text attachments are a bit garbled on iOS, so put in message body instead
     ATTACH = True
     if ATTACH:
         msg.attach(MIMEText(''))
@@ -82,7 +99,7 @@ if __name__ == '__main__':
 
         # Join performance calculations PDF file and plot PDF file
         plotFilename = market + '-plot.pdf'
-        outFilename = 'Artemis ' + market + ' ' + getMatchStr(str(currentDate)) + '.pdf'
+        outFilename = 'artemis-' + market + '-' + str(currentDate) + '.pdf'
         output = PdfFileWriter()
         appendPdf(PdfFileReader(file(perfFilename, 'rb')), output)
         appendPdf(PdfFileReader(file(plotFilename, 'rb')), output)
@@ -105,5 +122,5 @@ if __name__ == '__main__':
     # Send mail
     s = smtplib.SMTP_SSL(hostname)
     s.login(sender, password)
-    s.sendmail(sender, [recipients], msg.as_string())
+    s.sendmail(sender, recipients, msg.as_string())
     s.quit()
