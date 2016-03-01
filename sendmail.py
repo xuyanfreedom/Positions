@@ -65,12 +65,14 @@ if __name__ == '__main__':
 
     # Don't run if today's becnhmark file hasn't been saved (this can happen if today's email doesn't arrive
     # by the time preprocess.py runs, or if the email subject is wrong); in that case, the performance
-    # report isn't updated either.  If preprocess.py doesn't find a new email to save (and to update the 
+    # report isn't updated either.  If preprocess.py doesn't find a new email to save (and to update the
     # dates.csv file), then yesterday's benchmark file will still be there, saved with yesterday's date.
-    filename = getMarket(market) + '-' + str(asofDate) + '.csv'
-    fileSavedDate = int(datetime.strptime(time.ctime(os.path.getctime(filename)), "%a %b %d %H:%M:%S %Y").strftime('%Y%m%d'))
-    if fileSavedDate != currentDate and fileSavedDate not in holidays:
-        sys.exit()
+    # However, for LSE run anyway (file will have been saved at the end of the previous day).
+    # -------- NOW OBSOLETE - FILE GETS SAVED (COPIED) AUTOMATICALLY AT THE END OF PREVIOUS BUSINESS DAY ---------
+    #filename = getMarket(market) + '-' + str(asofDate) + '.csv'
+    #fileSavedDate = int(datetime.strptime(time.ctime(os.path.getctime(filename)), "%a %b %d %H:%M:%S %Y").strftime('%Y%m%d'))
+    #if fileSavedDate != currentDate and fileSavedDate not in holidays and market not in ('LSE', 'LSE-tradehero'):
+    #    sys.exit()
 
     hostname = 'mail.anthos-trading.com'
     password = 'ai024709th3669'
